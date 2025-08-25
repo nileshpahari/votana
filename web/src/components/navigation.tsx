@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useWallet } from "@/components/wallet-provider"
 import { Search, BarChart3, Wallet, Menu, X, Vote } from "lucide-react"
+import { totalCandidates, totalPolls } from "@/lib/data"
 
 interface NavigationProps {
   activeSection: "explore" | "dashboard"
@@ -70,16 +71,15 @@ export function Navigation({ activeSection, onSectionChange }: NavigationProps) 
 
             {/* Stats and Wallet Section */}
             <div className="hidden lg:flex items-center gap-4">
-              {/* Quick Stats */}
               <div className="flex items-center gap-4 px-4 py-2 bg-muted border-2 border-black">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-black">POLLS:</span>
-                  <Badge className="brutalist-badge bg-secondary text-secondary-foreground">24</Badge>
+                  <Badge className="brutalist-badge bg-secondary text-secondary-foreground">{totalPolls}</Badge>
                 </div>
                 <div className="w-px h-4 bg-black" />
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-black">VOTES:</span>
-                  <span className="text-xs font-bold text-black font-mono">12.4K</span>
+                  <span className="text-xs font-bold text-black font-mono">{totalCandidates}</span>
                 </div>
               </div>
 
