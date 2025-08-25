@@ -3,7 +3,7 @@ use crate::constants::*;
 use crate::states::*;
 use crate::errors::ErrorCode;
 
-pub fn register_candidate(ctx: Context<RegisterCandidate>, name: String, poll_id: u64) -> Result<()> {
+pub fn register_candidate(ctx: Context<RegisterCandidate>, poll_id: u64, name: String) -> Result<()> {
     require!(name.len() <= 32, ErrorCode::NameTooLong);
 
     let candidate = &mut ctx.accounts.candidate;
