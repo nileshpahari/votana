@@ -2,5 +2,6 @@ use anchor_lang::prelude::*;
 
 #[account]
 pub struct Registrations {
-    pub count: u64,
+    pub total: u64,
+    pub active: u64,
 }
