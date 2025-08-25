@@ -5,18 +5,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Progress } from "@/components/ui/progress"
 import { Search, TrendingUp, Clock, Users, Vote, Calendar, CheckCircle } from "lucide-react"
+import { totalCandidates, totalPolls } from "@/lib/data"
+import { getStatusColor } from "@/lib/getStatusColor"
+import { formatDate } from "@/lib/formatDate"
+import { Trending } from "./trending"
 
-// Dummy data for polls
 const dummyPolls = [
   {
     id: 1,
     title: "Should Solana implement a new governance token?",
     description: "A proposal to introduce a new governance mechanism for better decentralization",
-    category: "Governance",
     status: "active",
     endDate: "2024-01-15",
+    totalCandidates: 1,
     totalVotes: 1247,
     options: [
       { name: "Yes, implement it", votes: 823, percentage: 66 },
@@ -29,9 +31,9 @@ const dummyPolls = [
     id: 2,
     title: "Community Fund Allocation for Q1 2024",
     description: "Decide how to allocate the 500,000 SOL community development fund",
-    category: "Treasury",
     status: "active",
     endDate: "2024-01-20",
+    totalCandidates: 4,
     totalVotes: 892,
     options: [
       { name: "Developer Grants (40%)", votes: 356, percentage: 40 },
@@ -46,9 +48,9 @@ const dummyPolls = [
     id: 3,
     title: "New DeFi Protocol Integration",
     description: "Vote on integrating a new cross-chain DeFi protocol",
-    category: "DeFi",
     status: "ended",
     endDate: "2024-01-10",
+    totalCandidates: 2,
     totalVotes: 2156,
     options: [
       { name: "Approve Integration", votes: 1512, percentage: 70 },
@@ -61,9 +63,9 @@ const dummyPolls = [
     id: 4,
     title: "Validator Commission Rate Adjustment",
     description: "Proposal to adjust the maximum validator commission rate",
-    category: "Network",
     status: "active",
     endDate: "2024-01-25",
+    totalCandidates: 2,
     totalVotes: 567,
     options: [
       { name: "Reduce to 5%", votes: 340, percentage: 60 },
@@ -86,25 +88,6 @@ export function ExploreSection() {
     return matchesSearch && matchesFilter
   })
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "bg-yellow text-black border-2 border-black"
-      case "ended":
-        return "bg-gray-300 text-black border-2 border-black"
-      default:
-        return "bg-blue text-white border-2 border-black"
-    }
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    })
-  }
-
   return (
     <div className="space-y-8 bg-white min-h-screen p-6">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -116,13 +99,14 @@ export function ExploreSection() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Badge className="bg-red text-white border-2 border-black shadow-brutal font-mono font-bold uppercase gap-2">
+          <Badge className="bg-red text-white border-2 bg-black shadow-brutal font-mono font-bold uppercase gap-2">
             <TrendingUp className="h-3 w-3" />
-            24 ACTIVE POLLS
+            {totalPolls} ACTIVE POLLS
           </Badge>
-          <Badge className="bg-blue text-white border-2 border-black shadow-brutal font-mono font-bold uppercase gap-2">
+          <Badge className="bg-blue text-white border-2 bg-black shadow-brutal font-mono font-bold uppercase gap-2">
             <Users className="h-3 w-3" />
-            3.2K PARTICIPANTS
+            {totalCandidates} CANDIDATES
+
           </Badge>
         </div>
       </div>
@@ -178,89 +162,7 @@ export function ExploreSection() {
         </CardContent>
       </Card>
 
-      <div>
-        <div className="flex items-center gap-3 mb-6">
-          <TrendingUp className="h-6 w-6 text-red" />
-          <h2 className="text-2xl font-bold font-mono text-black uppercase tracking-tight">TRENDING NOW</h2>
-          <div className="flex-1 h-1 bg-red"></div>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-2">
-          {filteredPolls
-            .filter((poll) => poll.trending)
-            .map((poll) => (
-              <Card
-                key={poll.id}
-                className="brutalist-card bg-white border-black shadow-brutal hover:shadow-brutal-hover transition-shadow duration-200"
-              >
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Badge className="bg-blue text-white border-2 border-black font-mono font-bold uppercase">
-                          {poll.category.toUpperCase()}
-                        </Badge>
-                        <Badge className={`font-mono font-bold uppercase ${getStatusColor(poll.status)}`}>
-                          {poll.status.toUpperCase()}
-                        </Badge>
-                        {poll.trending && (
-                          <Badge className="bg-red text-white border-2 border-black font-mono font-bold uppercase gap-1">
-                            <TrendingUp className="h-3 w-3" />
-                            HOT
-                          </Badge>
-                        )}
-                      </div>
-                      <CardTitle className="text-xl font-mono font-bold leading-tight text-black uppercase">
-                        {poll.title}
-                      </CardTitle>
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600 line-clamp-2 font-sans">{poll.description}</p>
-                </CardHeader>
-
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    {poll.options.map((option, index) => (
-                      <div key={index} className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="font-mono font-bold text-black">{option.name}</span>
-                          <span className="text-black font-bold font-mono">
-                            {option.votes} VOTES ({option.percentage}%)
-                          </span>
-                        </div>
-                        <Progress value={option.percentage} className="h-3 bg-gray-200 border-2 border-black" />
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex items-center justify-between pt-4 border-t-2 border-black">
-                    <div className="flex items-center gap-4 text-sm text-gray-700">
-                      <span className="flex items-center gap-1 font-mono font-bold uppercase">
-                        <Users className="h-3 w-3" />
-                        {poll.totalVotes.toLocaleString()} VOTES
-                      </span>
-                      <span className="flex items-center gap-1 font-mono font-bold uppercase">
-                        <Calendar className="h-3 w-3" />
-                        ENDS {formatDate(poll.endDate).toUpperCase()}
-                      </span>
-                    </div>
-
-                    <Button
-                      size="sm"
-                      className={`brutalist-button font-mono font-bold uppercase border-2 border-black shadow-brutal ${
-                        poll.status === "ended" ? "bg-gray-300 text-black" : "bg-yellow text-black"
-                      }`}
-                      disabled={poll.status === "ended"}
-                    >
-                      <Vote className="h-3 w-3 mr-1" />
-                      {poll.status === "ended" ? "ENDED" : "VOTE NOW"}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-        </div>
-      </div>
+      <Trending polls={filteredPolls.filter((poll: any) => poll.trending)} />
 
       <div>
         <div className="flex items-center gap-3 mb-6">
@@ -268,7 +170,7 @@ export function ExploreSection() {
           <div className="flex-1 h-1 bg-black"></div>
         </div>
 
-        <div className="grid gap-4">
+        <div className="grid gap-4 lg:grid-cols-2">
           {filteredPolls.map((poll) => (
             <Card
               key={poll.id}
@@ -278,18 +180,10 @@ export function ExploreSection() {
                 <div className="flex flex-col lg:flex-row lg:items-center gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <Badge className="bg-blue text-white border-2 border-black font-mono font-bold uppercase">
-                        {poll.category.toUpperCase()}
-                      </Badge>
+                      
                       <Badge className={`font-mono font-bold uppercase ${getStatusColor(poll.status)}`}>
                         {poll.status.toUpperCase()}
                       </Badge>
-                      {poll.trending && (
-                        <Badge className="bg-red text-white border-2 border-black font-mono font-bold uppercase gap-1">
-                          <TrendingUp className="h-3 w-3" />
-                          HOT
-                        </Badge>
-                      )}
                     </div>
 
                     <h3 className="font-mono font-bold text-lg mb-1 text-black uppercase">{poll.title}</h3>
@@ -298,13 +192,17 @@ export function ExploreSection() {
                     <div className="flex items-center gap-4 text-sm text-gray-700 font-mono font-bold uppercase">
                       <span className="flex items-center gap-1">
                         <Users className="h-3 w-3" />
+                        {poll.totalCandidates.toLocaleString()} CANDIDATES
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Users className="h-3 w-3" />
                         {poll.totalVotes.toLocaleString()} VOTES
                       </span>
                       <span className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
                         ENDS {formatDate(poll.endDate).toUpperCase()}
                       </span>
-                      <span className="font-mono">BY {poll.creator}</span>
+                  
                     </div>
                   </div>
 
