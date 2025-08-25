@@ -3,6 +3,7 @@ use anchor_lang::prelude::*;
 #[account]
 #[derive(InitSpace)]
 pub struct Candidate {
+    pub creator: Pubkey,
     pub cid: u64,
     pub poll_id: u64,
     #[max_len(32)]
