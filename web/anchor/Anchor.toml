@@ -1,0 +1,29 @@
+[features]
+resolution = true
+skip-lint = false
+
+[programs.localnet]
+votana = "2puwiuoe4Yrn8nK8kZ8jDqwPApAGKLM7nR5NtnW5Lwap"
+
+[programs.devnet]
+votana = "2puwiuoe4Yrn8nK8kZ8jDqwPApAGKLM7nR5NtnW5Lwap"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "devnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "../node_modules/.bin/jest --preset ts-jest"
+
+[test]
+startup_wait = 5000
+shutdown_wait = 2000
+upgradeable = false
+
+[test.validator]
+bind_address = "127.0.0.1"
+ledger = ".anchor/test-ledger"
+rpc_port = 8899
