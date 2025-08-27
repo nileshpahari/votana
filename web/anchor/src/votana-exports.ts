@@ -2,7 +2,7 @@
 import { AnchorProvider, Program } from '@coral-xyz/anchor'
 import { Cluster, PublicKey } from '@solana/web3.js'
 import votanaIDL from '../target/idl/votana.json'
-import type { votana } from '../target/types/votana'
+import type { Votana as votana } from '../target/types/votana'
 
 // Re-export the generated IDL and type
 export { votana, votanaIDL }
