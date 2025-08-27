@@ -6,7 +6,7 @@ import {
   TransactionSignature,
 } from '@solana/web3.js'
 import idl from '../../../anchor/target/idl/votana.json'
-import { votana } from '../../../anchor/target/types/votana'
+import { Votana } from '../../../anchor/target/types/votana'
 import { Candidate, Poll } from '../utils/interfaces'
 import { store } from '../store'
 import { globalActions } from '../store/globalSlices'
@@ -20,7 +20,7 @@ export const getProvider = (
   publicKey: PublicKey | null,
   signTransaction: any,
   sendTransaction: any
-): Program<votana> | null => {
+): Program<Votana> | null => {
   if (!publicKey || !signTransaction) {
     console.error('Wallet not connected or missing signTransaction.')
     return null
@@ -33,10 +33,10 @@ export const getProvider = (
     { commitment: 'processed' }
   )
 
-  return new Program<votana>(idl as any, provider)
+  return new Program<Votana>(idl as any, provider)
 }
 
-export const getReadonlyProvider = (): Program<votana> => {
+export const getReadonlyProvider = (): Program<Votana> => {
   const connection = new Connection(RPC_URL, 'confirmed')
 
   // Use a dummy wallet for read-only operations
@@ -54,10 +54,10 @@ export const getReadonlyProvider = (): Program<votana> => {
     commitment: 'processed',
   })
 
-  return new Program<votana>(idl as any, provider)
+  return new Program<Votana>(idl as any, provider)
 }
 
-export const getCounter = async (program: Program<votana>): Promise<BN> => {
+export const getCounter = async (program: Program<Votana>): Promise<BN> => {
   try {
     const [counterPDA] = PublicKey.findProgramAddressSync(
       [Buffer.from('counter')],
@@ -79,7 +79,7 @@ export const getCounter = async (program: Program<votana>): Promise<BN> => {
 }
 
 export const initialize = async (
-  program: Program<votana>,
+  program: Program<Votana>,
   publicKey: PublicKey
 ): Promise<TransactionSignature> => {
   const [counterPDA] = PublicKey.findProgramAddressSync(
@@ -111,7 +111,7 @@ export const initialize = async (
 }
 
 export const createPoll = async (
-  program: Program<votana>,
+  program: Program<Votana>,
   publicKey: PublicKey,
   nextCount: BN,
   description: string,
@@ -150,7 +150,7 @@ export const createPoll = async (
 }
 
 export const registerCandidate = async (
-  program: Program<votana>,
+  program: Program<Votana>,
   publicKey: PublicKey,
   pollId: number,
   name: string
@@ -194,7 +194,7 @@ export const registerCandidate = async (
 }
 
 export const vote = async (
-  program: Program<votana>,
+  program: Program<Votana>,
   publicKey: PublicKey,
   pollId: number,
   candidateId: number
@@ -240,14 +240,14 @@ export const vote = async (
 }
 
 export const fetchAllPolls = async (
-  program: Program<votana>
+  program: Program<Votana>
 ): Promise<Poll[]> => {
   const polls = await program.account.poll.all()
   return serializedPoll(polls)
 }
 
 export const fetchPollDetails = async (
-  program: Program<votana>,
+  program: Program<Votana>,
   pollAddress: string
 ): Promise<Poll> => {
   const poll = await program.account.poll.fetch(pollAddress)
@@ -276,7 +276,7 @@ const serializedPoll = (polls: any[]): Poll[] =>
   }))
 
 export const fetchAllCandidates = async (
-  program: Program<votana>,
+  program: Program<Votana>,
   pollAddress: string
 ): Promise<Candidate[]> => {
   const pollData = await fetchPollDetails(program, pollAddress)
@@ -305,7 +305,7 @@ const serializedCandidates = (candidates: any[]): Candidate[] =>
   }))
 
 export const hasUserVoted = async (
-  program: Program<votana>,
+  program: Program<Votana>,
   publicKey: PublicKey,
   pollId: number
 ): Promise<boolean> => {
