@@ -22,17 +22,19 @@ const Page: NextPage = () => {
   )
 
   const [formData, setFormData] = useState({
+    title: '',
     description: '',
     startDate: '',
     endDate: '',
+    mode: 'open',
   })
 
   useEffect(() => {
     const fetchCounter = async () => {
       if (!program) return
       const count = await getCounter(program)
-      setNextCount(count.add(new BN(1)))
-      setIsInitialized(count.gte(new BN(0)))
+      setNextCount(count.total.add(new BN(1)))
+      setIsInitialized(count.total.gte(new BN(0)))
     }
 
     fetchCounter()
@@ -42,7 +44,7 @@ const Page: NextPage = () => {
     e.preventDefault()
     if (!program || !isInitialized) return
 
-    const { description, startDate, endDate } = formData
+    const { title, description, startDate, endDate, mode } = formData
 
     const startTimestamp = new Date(startDate).getTime() / 1000
     const endTimestamp = new Date(endDate).getTime() / 1000
@@ -54,15 +56,19 @@ const Page: NextPage = () => {
             program!,
             publicKey!,
             nextCount,
+            title,
             description,
             startTimestamp,
-            endTimestamp
+            endTimestamp,
+            mode === 'open' ? { open: {} } : { restricted: {} }
           )
 
           setFormData({
+            title: '',
             description: '',
             startDate: '',
             endDate: '',
+            mode: 'open',
           })
 
           console.log(tx)
@@ -93,6 +99,27 @@ const Page: NextPage = () => {
         shadow-lg p-6 w-4/5 md:w-2/5 space-y-6"
           onSubmit={handleSubmit}
         >
+          <div>
+            <label
+              htmlFor="title"
+              className="block text-sm font-semibold text-gray-700"
+            >
+              Poll Title
+            </label>
+            <input
+              type="text"
+              id="title"
+              placeholder="Enter poll title..."
+              required
+              className="mt-2 block w-full py-3 px-4 border border-gray-300
+              rounded-lg shadow-sm focus:ring-2 focus:ring-black
+              focus:outline-none bg-gray-100 text-gray-800"
+              value={formData.title}
+              onChange={(e) =>
+                setFormData({ ...formData, title: e.target.value })
+              }
+            />
+          </div>
           <div>
             <label
               htmlFor="description"
@@ -155,6 +182,29 @@ const Page: NextPage = () => {
                 setFormData({ ...formData, endDate: e.target.value })
               }
             />
+          </div>
+
+          <div>
+            <label
+              htmlFor="mode"
+              className="block text-sm font-semibold text-gray-700"
+            >
+              Mode
+            </label>
+            <select
+              id="mode"
+              required
+              className="mt-2 block w-full py-3 px-4 border border-gray-300
+              rounded-lg shadow-sm focus:ring-2 focus:ring-black
+              focus:outline-none bg-gray-100 text-gray-800"
+              value={formData.mode}
+              onChange={(e) =>
+                setFormData({ ...formData, mode: e.target.value })
+              }
+            >
+              <option value="open">Open</option>
+              <option value="restricted">Restricted</option>
+            </select>
           </div>
 
           <div className="flex justify-center w-full">

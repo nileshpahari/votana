@@ -1,20 +1,36 @@
-import { AnchorProvider, BN, Program, Wallet } from '@coral-xyz/anchor'
+import { AnchorProvider, BN, Program, Wallet } from "@coral-xyz/anchor";
 import {
   Connection,
   PublicKey,
   SystemProgram,
   TransactionSignature,
-} from '@solana/web3.js'
-import idl from '../../../anchor/target/idl/votana.json'
-import { Votana } from '../../../anchor/target/types/votana'
-import { Candidate, Poll } from '../utils/interfaces'
-import { store } from '../store'
-import { globalActions } from '../store/globalSlices'
+} from "@solana/web3.js";
+import idl from "@/idl/votana.json";
+import { Votana } from "@/types/votana";
+import { Candidate, Poll } from "../utils/interfaces";
+import { store } from "../store";
+import { globalActions } from "../store/globalSlices";
 
-let tx
-const programId = new PublicKey(idl.address)
-const { setCandidates, setPoll } = globalActions
-const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || 'http://127.0.0.1:8899'
+let tx;
+const programId = new PublicKey(idl.address);
+const { setCandidates, setPoll } = globalActions;
+const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || "http://127.0.0.1:8899";
+
+// PDAs
+const [counterPDA] = PublicKey.findProgramAddressSync(
+    [Buffer.from("counter")],
+    programId
+  );
+  const [registrationsPDA] = PublicKey.findProgramAddressSync(
+    [Buffer.from("registrations")],
+    programId
+  );
+
+  const [votesPDA] = PublicKey.findProgramAddressSync(
+    [Buffer.from("votes")],
+    programId
+  );
+
 
 export const getProvider = (
   publicKey: PublicKey | null,
@@ -22,132 +38,162 @@ export const getProvider = (
   sendTransaction: any
 ): Program<Votana> | null => {
   if (!publicKey || !signTransaction) {
-    console.error('Wallet not connected or missing signTransaction.')
-    return null
+    console.error("Wallet not connected or missing signTransaction.");
+    return null;
   }
 
-  const connection = new Connection(RPC_URL)
+  const connection = new Connection(RPC_URL);
   const provider = new AnchorProvider(
     connection,
     { publicKey, signTransaction, sendTransaction } as unknown as Wallet,
-    { commitment: 'processed' }
-  )
+    { commitment: "processed" }
+  );
 
-  return new Program<Votana>(idl as any, provider)
-}
+  return new Program<Votana>(idl as any, provider);
+};
 
 export const getReadonlyProvider = (): Program<Votana> => {
-  const connection = new Connection(RPC_URL, 'confirmed')
-
+  const connection = new Connection(RPC_URL, "confirmed");
   // Use a dummy wallet for read-only operations
   const dummyWallet = {
     publicKey: PublicKey.default,
     signTransaction: async () => {
-      throw new Error('Read-only provider cannot sign transactions.')
+      throw new Error("Read-only provider cannot sign transactions.");
     },
     signAllTransactions: async () => {
-      throw new Error('Read-only provider cannot sign transactions.')
+      throw new Error("Read-only provider cannot sign transactions.");
     },
-  }
+  };
 
   const provider = new AnchorProvider(connection, dummyWallet as any, {
-    commitment: 'processed',
-  })
+    commitment: "processed",
+  });
 
-  return new Program<Votana>(idl as any, provider)
-}
+  return new Program<Votana>(idl as any, provider);
+};
 
-export const getCounter = async (program: Program<Votana>): Promise<BN> => {
+export const getCounter = async (program: Program<Votana>): Promise<Record<string, BN>> => {
   try {
-    const [counterPDA] = PublicKey.findProgramAddressSync(
-      [Buffer.from('counter')],
-      program.programId
-    )
-
-    const counter = await program.account.counter.fetch(counterPDA)
-
+    const counter = await program.account.counter.fetch(counterPDA);
     if (!counter) {
-      console.warn('No counter found, returning zero')
-      return new BN(0)
+      console.warn("No counter found, returning zero");
+      return { total: new BN(0), active: new BN(0) };
     }
 
-    return counter.count
+    return { total: counter.total, active: counter.active };
   } catch (error) {
-    console.error('Failed to retrieve counter:', error)
-    return new BN(-1)
+    console.error("Failed to retrieve counter:", error);
+    return { total: new BN(-1), active: new BN(-1) };
   }
-}
+};
+export const getRegistrations = async (program: Program<Votana>): Promise<Record<string, BN>> => {
+  try {
+    const registrations = await program.account.registrations.fetch(registrationsPDA);
+    if (!registrations) {
+      console.warn("No registrations found, returning zero");
+      return { total: new BN(0), active: new BN(0) };
+    }
+    return { total: registrations.total, active: registrations.active };
+  } catch (error) {
+    console.error("Failed to retrieve registrations:", error);
+    return { total: new BN(-1), active: new BN(-1) };
+  }
+};
+export const getVotes = async (program: Program<Votana>): Promise<Record<string, BN>> => {
+  try {
+    const votes = await program.account.votes.fetch(votesPDA);
+    if (!votes) {
+      console.warn("No votes found, returning zero");
+      return { total: new BN(0), active: new BN(0) };
+    }
+    return { total: votes.total, active: votes.active };
+  } catch (error) {
+    console.error("Failed to retrieve votes:", error);
+    return { total: new BN(-1), active: new BN(-1) };
+  }
+};
 
 export const initialize = async (
   program: Program<Votana>,
   publicKey: PublicKey
 ): Promise<TransactionSignature> => {
-  const [counterPDA] = PublicKey.findProgramAddressSync(
-    [Buffer.from('counter')],
-    programId
-  )
-  const [registerationsPDA] = PublicKey.findProgramAddressSync(
-    [Buffer.from('registerations')],
-    programId
-  )
-
   tx = await program.methods
     .initialize()
     .accountsPartial({
-      user: publicKey,
+      signer: publicKey,
       counter: counterPDA,
-      registerations: registerationsPDA,
+      registrations: registrationsPDA,
+      votes: votesPDA,
       systemProgram: SystemProgram.programId,
     })
-    .rpc()
-
+    .rpc();
   const connection = new Connection(
     program.provider.connection.rpcEndpoint,
-    'confirmed'
-  )
-  await connection.confirmTransaction(tx, 'finalized')
+    "confirmed"
+  );
+  await connection.confirmTransaction(tx, "finalized");
+  return tx;
+};
 
-  return tx
-}
+const COUNTER_SEED = "counter";
+const REGISTRATIONS_SEED = "registrations";
+const VOTES_SEED = "votes";
+const POLL_SEED = "poll";
+const CANDIDATE_SEED = "candidate";
+const VOTER_SEED = "voter";
+
+const getPollPDA = (pollId: number): PublicKey => {
+  const PID = new BN(pollId);
+  const [pollPda] = PublicKey.findProgramAddressSync(
+    [Buffer.from(POLL_SEED), PID.toArrayLike(Buffer, "le", 8)],
+    programId
+  );
+  return pollPda;
+};
+
+const getCandidatePDA = (pollId: number, candidateId: number): PublicKey => {
+  const PID = new BN(pollId);
+  const CID = new BN(candidateId);
+  const [candidatePda] = PublicKey.findProgramAddressSync(
+    [Buffer.from(CANDIDATE_SEED), PID.toArrayLike(Buffer, "le", 8), CID.toArrayLike(Buffer, "le", 8)],
+    programId
+  );
+  return candidatePda;
+};
 
 export const createPoll = async (
   program: Program<Votana>,
   publicKey: PublicKey,
   nextCount: BN,
+  title: string,
   description: string,
   start: number,
-  end: number
+  end: number,
+  mode: { open: {} } | { restricted: {} }={open: {}},
 ): Promise<TransactionSignature> => {
-  const [counterPDA] = PublicKey.findProgramAddressSync(
-    [Buffer.from('counter')],
-    programId
-  )
-  const [pollPDA] = PublicKey.findProgramAddressSync(
-    [nextCount.toArrayLike(Buffer, 'le', 8)],
-    programId
-  )
 
-  const startBN = new BN(start)
-  const endBN = new BN(end)
+  const pollPDA = getPollPDA(nextCount.toNumber());
+  const startBN = new BN(start);
+  const endBN = new BN(end);
 
   tx = await program.methods
-    .createPoll(description, startBN, endBN)
+    .createPoll(title, description, startBN, endBN, mode)
     .accountsPartial({
-      user: publicKey,
-      counter: counterPDA,
       poll: pollPDA,
+      counter: counterPDA,
+      signer: publicKey,
       systemProgram: SystemProgram.programId,
     })
-    .rpc()
+    .rpc();
 
   const connection = new Connection(
     program.provider.connection.rpcEndpoint,
-    'confirmed'
-  )
-  await connection.confirmTransaction(tx, 'finalized')
+    "confirmed"
+  );
+  await connection.confirmTransaction(tx, "finalized");
 
-  return tx
-}
+  return tx;
+};
 
 export const registerCandidate = async (
   program: Program<Votana>,
@@ -155,43 +201,32 @@ export const registerCandidate = async (
   pollId: number,
   name: string
 ): Promise<TransactionSignature> => {
-  const PID = new BN(pollId)
-  const [pollPda] = PublicKey.findProgramAddressSync(
-    [PID.toArrayLike(Buffer, 'le', 8)],
-    programId
-  )
-  const [registerationsPda] = PublicKey.findProgramAddressSync(
-    [Buffer.from('registerations')],
-    programId
-  )
+  const PID = new BN(pollId);
+  const pollPDA = getPollPDA(pollId);
+  const regs = await program.account.registrations.fetch(registrationsPDA);
+  const CID = regs.total.add(new BN(1));
 
-  const regs = await program.account.registerations.fetch(registerationsPda)
-  const CID = regs.count.add(new BN(1))
-
-  const [candidatePda] = PublicKey.findProgramAddressSync(
-    [PID.toArrayLike(Buffer, 'le', 8), CID.toArrayLike(Buffer, 'le', 8)],
-    programId
-  )
+  const candidatePDA = getCandidatePDA(pollId, CID.toNumber());
 
   tx = await program.methods
     .registerCandidate(PID, name)
     .accountsPartial({
-      user: publicKey,
-      poll: pollPda,
-      registerations: registerationsPda,
-      candidate: candidatePda,
+      signer: publicKey,
+      poll: pollPDA,
+      registrations: registrationsPDA,
+      candidate: candidatePDA,
       systemProgram: SystemProgram.programId,
     })
-    .rpc()
+    .rpc();
 
   const connection = new Connection(
     program.provider.connection.rpcEndpoint,
-    'confirmed'
-  )
-  await connection.confirmTransaction(tx, 'finalized')
+    "confirmed"
+  );
+  await connection.confirmTransaction(tx, "finalized");
 
-  return tx
-}
+  return tx;
+};
 
 export const vote = async (
   program: Program<Votana>,
@@ -199,58 +234,52 @@ export const vote = async (
   pollId: number,
   candidateId: number
 ): Promise<TransactionSignature> => {
-  const PID = new BN(pollId)
-  const CID = new BN(candidateId)
+  const PID = new BN(pollId);
+  const CID = new BN(candidateId);
 
-  const [pollPda] = PublicKey.findProgramAddressSync(
-    [PID.toArrayLike(Buffer, 'le', 8)],
-    programId
-  )
+  const pollPDA = getPollPDA(pollId);
   const [voterPDA] = PublicKey.findProgramAddressSync(
     [
-      Buffer.from('voter'),
-      PID.toArrayLike(Buffer, 'le', 8),
+      Buffer.from(VOTER_SEED),
+      PID.toArrayLike(Buffer, "le", 8),
       publicKey.toBuffer(),
     ],
     programId
-  )
-  const [candidatePda] = PublicKey.findProgramAddressSync(
-    [PID.toArrayLike(Buffer, 'le', 8), CID.toArrayLike(Buffer, 'le', 8)],
-    programId
-  )
+  );
+  const candidatePDA = getCandidatePDA(pollId, candidateId);
 
   tx = await program.methods
-    .vote(PID, CID)
+    .castVote(PID, CID)
     .accountsPartial({
-      user: publicKey,
-      poll: pollPda,
-      candidate: candidatePda,
+      signer: publicKey,
+      poll: pollPDA,
+      candidate: candidatePDA,
       voter: voterPDA,
       systemProgram: SystemProgram.programId,
     })
-    .rpc()
+    .rpc();
 
   const connection = new Connection(
     program.provider.connection.rpcEndpoint,
-    'confirmed'
-  )
-  await connection.confirmTransaction(tx, 'finalized')
+    "confirmed"
+  );
+  await connection.confirmTransaction(tx, "finalized");
 
-  return tx
-}
+  return tx;
+};
 
 export const fetchAllPolls = async (
   program: Program<Votana>
 ): Promise<Poll[]> => {
-  const polls = await program.account.poll.all()
-  return serializedPoll(polls)
-}
+  const polls = await program.account.poll.all();
+  return serializedPoll(polls);
+};
 
 export const fetchPollDetails = async (
   program: Program<Votana>,
   pollAddress: string
 ): Promise<Poll> => {
-  const poll = await program.account.poll.fetch(pollAddress)
+  const poll = await program.account.poll.fetch(pollAddress);
 
   const serialized: Poll = {
     ...poll,
@@ -259,11 +288,11 @@ export const fetchPollDetails = async (
     start: poll.start.toNumber() * 1000,
     end: poll.end.toNumber() * 1000,
     candidates: poll.candidates.toNumber(),
-  }
+  };
 
-  store.dispatch(setPoll(serialized))
-  return serialized
-}
+  store.dispatch(setPoll(serialized));
+  return serialized;
+};
 
 const serializedPoll = (polls: any[]): Poll[] =>
   polls.map((c: any) => ({
@@ -273,26 +302,26 @@ const serializedPoll = (polls: any[]): Poll[] =>
     start: c.account.start.toNumber() * 1000,
     end: c.account.end.toNumber() * 1000,
     candidates: c.account.candidates.toNumber(),
-  }))
+  }));
 
 export const fetchAllCandidates = async (
   program: Program<Votana>,
   pollAddress: string
 ): Promise<Candidate[]> => {
-  const pollData = await fetchPollDetails(program, pollAddress)
-  if (!pollData) return []
+  const pollData = await fetchPollDetails(program, pollAddress);
+  if (!pollData) return [];
 
-  const PID = new BN(pollData.id)
+  const PID = new BN(pollData.id);
 
-  const candidateAccounts = await program.account.candidate.all()
+  const candidateAccounts = await program.account.candidate.all();
   const candidates = candidateAccounts.filter((candidate) => {
     // Assuming the candidate account has a field `pollId` or equivalent
-    return candidate.account.pollId.eq(PID)
-  })
+    return candidate.account.pollId.eq(PID);
+  });
 
-  store.dispatch(setCandidates(serializedCandidates(candidates)))
-  return candidates as unknown as Candidate[]
-}
+  store.dispatch(setCandidates(serializedCandidates(candidates)));
+  return candidates as unknown as Candidate[];
+};
 
 const serializedCandidates = (candidates: any[]): Candidate[] =>
   candidates.map((c: any) => ({
@@ -302,33 +331,33 @@ const serializedCandidates = (candidates: any[]): Candidate[] =>
     pollId: c.account.pollId.toNumber(),
     votes: c.account.votes.toNumber(),
     name: c.account.name,
-  }))
+  }));
 
 export const hasUserVoted = async (
   program: Program<Votana>,
   publicKey: PublicKey,
   pollId: number
 ): Promise<boolean> => {
-  const PID = new BN(pollId)
+  const PID = new BN(pollId);
 
   const [voterPda] = PublicKey.findProgramAddressSync(
     [
-      Buffer.from('voter'),
-      PID.toArrayLike(Buffer, 'le', 8),
+      Buffer.from("voter"),
+      PID.toArrayLike(Buffer, "le", 8),
       publicKey.toBuffer(),
     ],
     programId
-  )
+  );
 
   try {
-    const voterAccount = await program.account.voter.fetch(voterPda)
+    const voterAccount = await program.account.voter.fetch(voterPda);
     if (!voterAccount || !voterAccount.hasVoted) {
-      return false // Default value if no account exists or hasn't voted
+      return false; // Default value if no account exists or hasn't voted
     }
 
-    return true
+    return true;
   } catch (error) {
-    console.error('Error fetching voter account:', error)
-    return false
+    console.error("Error fetching voter account:", error);
+    return false;
   }
-}
+};

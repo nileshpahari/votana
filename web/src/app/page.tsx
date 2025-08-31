@@ -28,7 +28,7 @@ export default function Page() {
   const fetchData = async () => {
     fetchAllPolls(programReadOnly).then((data) => setPolls(data as any))
     const count = await getCounter(programReadOnly)
-    setIsInitialized(count.gte(new BN(0)))
+    setIsInitialized(count.total.gte(new BN(0)))
   }
 
   useEffect(() => {

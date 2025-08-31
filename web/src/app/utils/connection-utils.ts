@@ -1,6 +1,6 @@
 import { Connection, PublicKey } from '@solana/web3.js'
 import { getReadonlyProvider } from '../services/blockchain.service'
-import idl from '../../../anchor/target/idl/votana.json'
+import idl from '@/idl/votana.json'
 
 export const EXPECTED_PROGRAM_ID = '2puwiuoe4Yrn8nK8kZ8jDqwPApAGKLM7nR5NtnW5Lwap'
 
