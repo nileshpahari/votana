@@ -13,7 +13,7 @@ pub fn create_poll(
 ) -> Result<()> {
     let now = Clock::get()?.unix_timestamp as u64;
     require!(start < end, ErrorCode::InvalidDates);
-    require!(start > now, ErrorCode::PollNotActive);
+    require!(start >= now, ErrorCode::PollNotActive);
 
     require!(title.len() <= 30, ErrorCode::TitleTooLong);
     require!(description.len() <= 200, ErrorCode::DescriptionTooLong);
@@ -22,7 +22,7 @@ pub fn create_poll(
     let counter = &mut ctx.accounts.counter;
 
     counter.total = counter.total.saturating_add(1);
-    counter.active=counter.active.saturating_add(1);
+    counter.active = counter.active.saturating_add(1);
 
     poll.id = counter.total;
     poll.creator = ctx.accounts.signer.key();

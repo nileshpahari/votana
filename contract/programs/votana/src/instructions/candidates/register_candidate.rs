@@ -10,9 +10,10 @@ pub fn register_candidate(ctx: Context<RegisterCandidate>, poll_id: u64, name: S
     let registrations = &mut ctx.accounts.registrations;
     let signer = &ctx.accounts.signer;
     let poll = &mut ctx.accounts.poll;
+
     let now = Clock::get()?.unix_timestamp as u64;
 
-    require!(poll.start < now, ErrorCode::PollNotActive);
+    require!(poll.start <= now, ErrorCode::PollNotActive);
     require!(poll.end > now, ErrorCode::PollNotActive);
 
     require!(poll.id == poll_id, ErrorCode::PollDoesNotExist);
@@ -47,7 +48,7 @@ pub struct RegisterCandidate<'info> {
         payer = signer,
         space = ANCHOR_DISCRIMINATOR_SIZE + Candidate::INIT_SPACE,
         seeds = [
-            b"candidate",
+            b"candidate".as_ref(),
             poll_id.to_le_bytes().as_ref(),
             (registrations.total + 1).to_le_bytes().as_ref()
         ],

@@ -18,11 +18,11 @@ pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
-    #[account(init, payer = signer, space = ANCHOR_DISCRIMINATOR_SIZE + 8, seeds = [b"counter"], bump)]
+    #[account(init, payer = signer, space = ANCHOR_DISCRIMINATOR_SIZE + Counter::INIT_SPACE, seeds = [b"counter"], bump)]
     pub counter: Account<'info, Counter>,
-    #[account(init, payer = signer, space = ANCHOR_DISCRIMINATOR_SIZE + 8, seeds = [b"registrations"], bump)]
+    #[account(init, payer = signer, space = ANCHOR_DISCRIMINATOR_SIZE + Registrations::INIT_SPACE, seeds = [b"registrations"], bump)]
     pub registrations: Account<'info, Registrations>,
-    #[account(init, payer = signer, space = ANCHOR_DISCRIMINATOR_SIZE + 8, seeds = [b"votes"], bump)]
+    #[account(init, payer = signer, space = ANCHOR_DISCRIMINATOR_SIZE + Votes::INIT_SPACE, seeds = [b"votes"], bump)]
     pub votes: Account<'info, Votes>,
     #[account(mut)]
     pub signer: Signer<'info>,

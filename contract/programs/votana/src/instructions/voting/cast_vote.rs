@@ -8,7 +8,7 @@ pub fn cast_vote(ctx: Context<CastVote>, poll_id: u64, cid: u64) -> Result<()> {
     let poll = &mut ctx.accounts.poll;
     let voter = &mut ctx.accounts.voter;
     let votes = &mut ctx.accounts.votes;
-    let now_ts = Clock::get()?.unix_timestamp as u64;
+    let now = Clock::get()?.unix_timestamp as u64;
 
     require!(poll.id == poll_id, ErrorCode::PollDoesNotExist);
 
@@ -20,11 +20,11 @@ pub fn cast_vote(ctx: Context<CastVote>, poll_id: u64, cid: u64) -> Result<()> {
     }
 
     require!(
-        poll.start < now_ts,
+        poll.start <= now,
         ErrorCode::PollNotActive
     );
     require!(
-        poll.end > now_ts,
+        poll.end > now,
         ErrorCode::PollNotActive
     );
 
