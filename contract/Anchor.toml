@@ -8,11 +8,14 @@ skip-lint = false
 [programs.localnet]
 votana = "7K7wfs7ofow8gD2S41bzqs9NWqojQAxdgXxrLahLTiUc"
 
+[programs.devnet]
+votana = "7K7wfs7ofow8gD2S41bzqs9NWqojQAxdgXxrLahLTiUc"
+
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
