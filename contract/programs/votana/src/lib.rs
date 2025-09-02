@@ -6,7 +6,6 @@ pub mod instructions;
 pub mod states;
 
 use instructions::*;
-use states::*;
 
 declare_id!("7K7wfs7ofow8gD2S41bzqs9NWqojQAxdgXxrLahLTiUc");
 
@@ -24,9 +23,11 @@ pub mod votana {
         description: String,
         start: u64,
         end: u64,
-        mode: PollMode,
+        add_candidates: bool,
+        withdraw_votes: bool,
+        withdraw_candidates: bool,
     ) -> Result<()> {
-        instructions::create_poll(ctx, title, description, start, end, mode)
+        instructions::create_poll(ctx, title, description, start, end, add_candidates, withdraw_votes, withdraw_candidates)
     }
 
     pub fn close_poll(ctx: Context<ClosePoll>, poll_id: u64) -> Result<()> {

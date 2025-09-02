@@ -36,4 +36,6 @@ pub enum ErrorCode {
     VoterNotVoted,
     #[msg("Voter candidate mismatch")]
     VoterCandidateMismatch,
+    #[msg("Poll votes underflow")]
+    PollVotesUnderflow,
 }

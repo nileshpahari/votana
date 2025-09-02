@@ -12,18 +12,8 @@ pub struct Poll {
     pub start: u64,
     pub end: u64,
     pub candidates: u64,
-    pub mode: PollMode,
-    // pub restriction: VoterRestriction,
+    pub votes: u64,
+    pub allow_candidate_adding: bool, // true if only the poll creator can add candidates
+    pub allow_vote_closing: bool,      // true if people can close their votes
+    pub allow_candidate_withdraw: bool, // true if people can unregister candidates
 }
-
-#[derive(AnchorSerialize, AnchorDeserialize, InitSpace, Clone, PartialEq)]
-pub enum PollMode {
-    Open, // anyone can register as candidate
-    Restricted, // only poll creator can register candidates
-}
-
-// #[derive(AnchorSerialize, AnchorDeserialize, InitSpace, Clone)]
-// pub enum VoterRestriction {
-//     Open, // anyone can vote
-//     Whitelist, // only whitelist can vote
-// }
