@@ -30,9 +30,13 @@ pub fn cast_vote(ctx: Context<CastVote>, poll_id: u64, cid: u64) -> Result<()> {
 
     voter.cid= cid;
     voter.poll_id= poll_id;
-    voter.has_voted=true;
+    voter.has_voted=true;   
 
+    // changing the poll counters
     candidate.votes = candidate.votes.saturating_add(1);
+    poll.votes = poll.votes.saturating_add(1);
+    
+    // changing the global counters
     votes.total = votes.total.saturating_add(1);
     votes.active = votes.active.saturating_add(1);
 

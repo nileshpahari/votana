@@ -9,7 +9,9 @@ pub fn create_poll(
     description: String,
     start: u64,
     end: u64,
-    mode: PollMode,
+    add_candidates: bool,
+    withdraw_votes: bool,
+    withdraw_candidates: bool
 ) -> Result<()> {
     let now = Clock::get()?.unix_timestamp as u64;
     require!(start < end, ErrorCode::InvalidDates);
@@ -21,6 +23,7 @@ pub fn create_poll(
     let poll = &mut ctx.accounts.poll;
     let counter = &mut ctx.accounts.counter;
 
+    // changing the global counters
     counter.total = counter.total.saturating_add(1);
     counter.active = counter.active.saturating_add(1);
 
@@ -31,7 +34,10 @@ pub fn create_poll(
     poll.start = start;
     poll.end = end;
     poll.candidates = 0;
-    poll.mode = mode;
+    poll.votes = 0;
+    poll.allow_candidate_adding = add_candidates;
+    poll.allow_vote_closing = withdraw_votes;
+    poll.allow_candidate_withdraw = withdraw_candidates;
 
     Ok(())
 }

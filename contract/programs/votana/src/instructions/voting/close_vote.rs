@@ -20,8 +20,13 @@ pub fn close_vote(ctx: Context<CloseVote>, poll_id: u64, cid: u64) -> Result<()>
     // ensure counters won't underflow
     require!(candidate.votes > 0, ErrorCode::CandidateVotesUnderflow);
     require!(votes.active > 0, ErrorCode::VotesCounterUnderflow);
+    require!(poll.votes > 0, ErrorCode::PollVotesUnderflow);
 
+    // changing the poll counters
     candidate.votes-=1;
+    poll.votes -=1;
+    
+    // changing the global counters
     votes.active-=1;
 
     Ok(())

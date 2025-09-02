@@ -18,14 +18,17 @@ pub fn register_candidate(ctx: Context<RegisterCandidate>, poll_id: u64, name: S
 
     require!(poll.id == poll_id, ErrorCode::PollDoesNotExist);
     
-    if poll.mode == PollMode::Restricted {
-    require_keys_eq!(poll.creator, signer.key(), ErrorCode::Unauthorized);
+    if !poll.allow_candidate_adding {
+        require_keys_eq!(poll.creator, signer.key(), ErrorCode::Unauthorized);
     }
     
     require!(candidate.has_registered == false, ErrorCode::CandidateAlreadyRegistered);
 
+    // changing the global counters
     registrations.total = registrations.total.saturating_add(1);
     registrations.active = registrations.active.saturating_add(1);
+    
+    // changing the poll counters
     poll.candidates = poll.candidates.saturating_add(1);
 
     candidate.cid = registrations.total;
