@@ -165,7 +165,7 @@
               },
               {
                 "kind": "arg",
-                "path": "poll_id"
+                "path": "_poll_id"
               }
             ]
           }
@@ -185,6 +185,50 @@
                   116,
                   101,
                   114
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "votes",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  111,
+                  116,
+                  101,
+                  115
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "registrations",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110,
+                  115
                 ]
               }
             ]
@@ -393,12 +437,16 @@
           "type": "u64"
         },
         {
-          "name": "mode",
-          "type": {
-            "defined": {
-              "name": "PollMode"
-            }
-          }
+          "name": "add_candidates",
+          "type": "bool"
+        },
+        {
+          "name": "withdraw_votes",
+          "type": "bool"
+        },
+        {
+          "name": "withdraw_candidates",
+          "type": "bool"
         }
       ]
     },
@@ -614,7 +662,7 @@
               },
               {
                 "kind": "arg",
-                "path": "cid"
+                "path": "_cid"
               }
             ]
           }
@@ -660,6 +708,24 @@
                   105,
                   111,
                   110,
+                  115
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "votes",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  111,
+                  116,
+                  101,
                   115
                 ]
               }
@@ -849,6 +915,11 @@
       "code": 6016,
       "name": "VoterCandidateMismatch",
       "msg": "Voter candidate mismatch"
+    },
+    {
+      "code": 6017,
+      "name": "PollVotesUnderflow",
+      "msg": "Poll votes underflow"
     }
   ],
   "types": [
@@ -934,26 +1005,20 @@
             "type": "u64"
           },
           {
-            "name": "mode",
-            "type": {
-              "defined": {
-                "name": "PollMode"
-              }
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "PollMode",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "Open"
+            "name": "votes",
+            "type": "u64"
           },
           {
-            "name": "Restricted"
+            "name": "allow_candidate_adding",
+            "type": "bool"
+          },
+          {
+            "name": "allow_vote_closing",
+            "type": "bool"
+          },
+          {
+            "name": "allow_candidate_withdraw",
+            "type": "bool"
           }
         ]
       }

@@ -197,6 +197,50 @@ export type Votana = {
           }
         },
         {
+          "name": "votes",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  111,
+                  116,
+                  101,
+                  115
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "registrations",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110,
+                  115
+                ]
+              }
+            ]
+          }
+        },
+        {
           "name": "signer",
           "writable": true,
           "signer": true
@@ -399,12 +443,16 @@ export type Votana = {
           "type": "u64"
         },
         {
-          "name": "mode",
-          "type": {
-            "defined": {
-              "name": "pollMode"
-            }
-          }
+          "name": "addCandidates",
+          "type": "bool"
+        },
+        {
+          "name": "withdrawVotes",
+          "type": "bool"
+        },
+        {
+          "name": "withdrawCandidates",
+          "type": "bool"
         }
       ]
     },
@@ -673,6 +721,24 @@ export type Votana = {
           }
         },
         {
+          "name": "votes",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  111,
+                  116,
+                  101,
+                  115
+                ]
+              }
+            ]
+          }
+        },
+        {
           "name": "signer",
           "writable": true,
           "signer": true
@@ -855,6 +921,11 @@ export type Votana = {
       "code": 6016,
       "name": "voterCandidateMismatch",
       "msg": "Voter candidate mismatch"
+    },
+    {
+      "code": 6017,
+      "name": "pollVotesUnderflow",
+      "msg": "Poll votes underflow"
     }
   ],
   "types": [
@@ -940,26 +1011,20 @@ export type Votana = {
             "type": "u64"
           },
           {
-            "name": "mode",
-            "type": {
-              "defined": {
-                "name": "pollMode"
-              }
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "pollMode",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "open"
+            "name": "votes",
+            "type": "u64"
           },
           {
-            "name": "restricted"
+            "name": "allowCandidateAdding",
+            "type": "bool"
+          },
+          {
+            "name": "allowVoteClosing",
+            "type": "bool"
+          },
+          {
+            "name": "allowCandidateWithdraw",
+            "type": "bool"
           }
         ]
       }
