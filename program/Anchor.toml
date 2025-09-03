@@ -15,7 +15,7 @@ votana = "7K7wfs7ofow8gD2S41bzqs9NWqojQAxdgXxrLahLTiUc"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "devnet"
+cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
