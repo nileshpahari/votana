@@ -1,53 +1,68 @@
-'use client'
+"use client";
 
-import { NextPage } from 'next'
-import { useEffect, useMemo, useState } from 'react'
-import { toast } from 'react-toastify'
-import { BN } from '@coral-xyz/anchor'
+import { NextPage } from "next";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify";
+import { BN } from "@coral-xyz/anchor";
 import {
   createPoll,
   getCounter,
   getProvider,
-} from '../services/blockchain.service'
-import { useWallet } from '@solana/wallet-adapter-react'
+} from "@/services/blockchain.service";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { Label } from "@radix-ui/react-label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 
 const Page: NextPage = () => {
-  const { publicKey, sendTransaction, signTransaction } = useWallet()
-  const [nextCount, setNextCount] = useState<BN>(new BN(0))
-  const [isInitialized, setIsInitialized] = useState(false)
+  const { publicKey, sendTransaction, signTransaction } = useWallet();
+  const [nextCount, setNextCount] = useState<BN>(new BN(0));
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const program = useMemo(
     () => getProvider(publicKey, signTransaction, sendTransaction),
     [publicKey, signTransaction, sendTransaction]
-  )
+  );
 
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    startDate: '',
-    endDate: '',
-    mode: 'open',
-  })
+    title: "",
+    description: "",
+    startDate: "",
+    endDate: "",
+    add_candidates: true,
+    withdraw_votes: true,
+    withdraw_candidates: true,
+  });
 
   useEffect(() => {
     const fetchCounter = async () => {
-      if (!program) return
-      const count = await getCounter(program)
-      setNextCount(count.total.add(new BN(1)))
-      setIsInitialized(count.total.gte(new BN(0)))
-    }
+      if (!program) return;
+      const count = await getCounter(program);
+      setNextCount(count.total.add(new BN(1)));
+      setIsInitialized(count.total.gte(new BN(0)));
+    };
 
-    fetchCounter()
-  }, [program, formData])
+    fetchCounter();
+  }, [program]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!program || !isInitialized) return
+    e.preventDefault();
+    if (!program || !isInitialized) return;
 
-    const { title, description, startDate, endDate, mode } = formData
+    const {
+      title,
+      description,
+      startDate,
+      endDate,
+      add_candidates,
+      withdraw_votes,
+      withdraw_candidates,
+    } = formData;
 
-    const startTimestamp = new Date(startDate).getTime() / 1000
-    const endTimestamp = new Date(endDate).getTime() / 1000
+    const startTimestamp = new Date(startDate).getTime() / 1000;
+    const endTimestamp = new Date(endDate).getTime() / 1000;
 
     await toast.promise(
       new Promise<void>(async (resolve, reject) => {
@@ -60,167 +75,186 @@ const Page: NextPage = () => {
             description,
             startTimestamp,
             endTimestamp,
-            mode === 'open' ? { open: {} } : { restricted: {} }
-          )
+            add_candidates,
+            withdraw_votes,
+            withdraw_candidates
+          );
 
           setFormData({
-            title: '',
-            description: '',
-            startDate: '',
-            endDate: '',
-            mode: 'open',
-          })
+            title: "",
+            description: "",
+            startDate: "",
+            endDate: "",
+            add_candidates: true,
+            withdraw_votes: true,
+            withdraw_candidates: true,
+          });
 
-          console.log(tx)
-          resolve(tx as any)
+          console.log(tx);
+          resolve(tx as any);
         } catch (error) {
-          console.error('Transaction failed:', error)
-          reject(error)
+          console.error("Transaction failed:", error);
+          reject(error);
         }
       }),
       {
-        pending: 'Approve transaction...',
-        success: 'Transaction successful 👌',
-        error: 'Encountered error 🤯',
+        pending: "Approve transaction...",
+        success: "Transaction successful 👌",
+        error: "Encountered error 🤯",
       }
-    )
-  }
+    );
+  };
 
   return (
-    <div className="flex flex-col justify-center items-center">
-      <div className="h-16"></div>
-      <div className="flex flex-col justify-center items-center space-y-6 w-full">
-        <h2 className="bg-gray-800 text-white rounded-full px-6 py-2 text-lg font-bold">
-          Create Poll
+    <div className="flex items-center justify-center w-full min-h-screen py-24">
+      <section className="w-full max-w-2xl bg-white text-black border-2 border-black shadow-[4px_4px_0_0_#000] rounded-none p-5 md:p-6 ">
+        <h2 className="font-mono text-xl md:text-2xl font-bold uppercase tracking-tight">
+          Create a New Poll
         </h2>
 
-        <form
-          className="bg-white border border-gray-300 rounded-2xl
-        shadow-lg p-6 w-4/5 md:w-2/5 space-y-6"
-          onSubmit={handleSubmit}
-        >
-          <div>
-            <label
-              htmlFor="title"
-              className="block text-sm font-semibold text-gray-700"
-            >
-              Poll Title
-            </label>
-            <input
-              type="text"
+        <form onSubmit={handleSubmit} className="mt-5 space-y-5">
+          <div className="grid gap-2">
+            <Label htmlFor="title" className="uppercase font-mono">
+              Title
+            </Label>
+            <Input
               id="title"
-              placeholder="Enter poll title..."
-              required
-              className="mt-2 block w-full py-3 px-4 border border-gray-300
-              rounded-lg shadow-sm focus:ring-2 focus:ring-black
-              focus:outline-none bg-gray-100 text-gray-800"
               value={formData.title}
               onChange={(e) =>
                 setFormData({ ...formData, title: e.target.value })
               }
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="description"
-              className="block text-sm font-semibold text-gray-700"
-            >
-              Poll Description
-            </label>
-            <input
-              type="text"
-              id="description"
-              placeholder="Briefly describe the purpose of this poll..."
-              required
-              className="mt-2 block w-full py-3 px-4 border border-gray-300
-              rounded-lg shadow-sm focus:ring-2 focus:ring-black
-              focus:outline-none bg-gray-100 text-gray-800"
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
+              placeholder="e.g., Treasury allocation for Q4"
+              className="rounded-none border-2 border-black shadow-[2px_2px_0_0_#000] focus-visible:ring-0"
             />
           </div>
 
-          <div>
-            <label
-              htmlFor="startDate"
-              className="block text-sm font-semibold text-gray-700"
-            >
-              Start Date
-            </label>
-            <input
+          <div className="grid gap-2">
+            <Label htmlFor="desc" className="uppercase font-mono">
+              Description
+            </Label>
+            <Textarea
+              id="desc"
+              value={formData.description}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
+              placeholder="Briefly describe the proposal and its impact."
+              className="min-h-28 rounded-none border-2 border-black shadow-[2px_2px_0_0_#000] focus-visible:ring-0"
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="startsAt" className="uppercase font-mono">
+              Starts At
+            </Label>
+            <Input
+              id="starts"
               type="datetime-local"
-              id="startDate"
-              required
-              className="mt-2 block w-full py-3 px-4 border border-gray-300
-              rounded-lg shadow-sm focus:ring-2 focus:ring-black
-              focus:outline-none bg-gray-100 text-gray-800"
               value={formData.startDate}
               onChange={(e) =>
                 setFormData({ ...formData, startDate: e.target.value })
               }
+              className="rounded-none border-2 border-black shadow-[2px_2px_0_0_#000] focus-visible:ring-0"
             />
           </div>
-
-          <div>
-            <label
-              htmlFor="endDate"
-              className="block text-sm font-semibold text-gray-700"
-            >
-              End Date
-            </label>
-            <input
+          <div className="grid gap-2">
+            <Label htmlFor="endsAt" className="uppercase font-mono">
+              Ends At
+            </Label>
+            <Input
+              id="ends"
               type="datetime-local"
-              id="endDate"
-              required
-              className="mt-2 block w-full py-3 px-4 border border-gray-300
-              rounded-lg shadow-sm focus:ring-2 focus:ring-black
-              focus:outline-none bg-gray-100 text-gray-800"
               value={formData.endDate}
               onChange={(e) =>
                 setFormData({ ...formData, endDate: e.target.value })
               }
+              className="rounded-none border-2 border-black shadow-[2px_2px_0_0_#000] focus-visible:ring-0"
             />
           </div>
 
-          <div>
-            <label
-              htmlFor="mode"
-              className="block text-sm font-semibold text-gray-700"
-            >
-              Mode
-            </label>
-            <select
-              id="mode"
-              required
-              className="mt-2 block w-full py-3 px-4 border border-gray-300
-              rounded-lg shadow-sm focus:ring-2 focus:ring-black
-              focus:outline-none bg-gray-100 text-gray-800"
-              value={formData.mode}
-              onChange={(e) =>
-                setFormData({ ...formData, mode: e.target.value })
+          <div className="flex items-center justify-between border-2 border-black rounded-none p-3 shadow-[2px_2px_0_0_#000] bg-gray-50">
+            <div className="space-y-0.5">
+              <p className="uppercase font-mono font-bold">
+                Allow Add Candidates
+              </p>
+              <p className="text-sm text-gray-700">
+                Voters can propose new candidates.
+              </p>
+            </div>
+            <Switch
+              id="add_candidates"
+              checked={formData.add_candidates}
+              onCheckedChange={(v) =>
+                setFormData({ ...formData, add_candidates: v })
               }
-            >
-              <option value="open">Open</option>
-              <option value="restricted">Restricted</option>
-            </select>
+            />
           </div>
 
-          <div className="flex justify-center w-full">
-            <button
+          <div className="flex items-center justify-between border-2 border-black rounded-none p-3 shadow-[2px_2px_0_0_#000] bg-gray-50">
+            <div className="space-y-0.5">
+              <p className="uppercase font-mono font-bold">
+                Allow Withdraw Votes
+              </p>
+              <p className="text-sm text-gray-700">
+                Voters can withdraw their votes.
+              </p>
+            </div>
+            <Switch
+              id="withdraw_votes"
+              checked={formData.withdraw_votes}
+              onCheckedChange={(v) =>
+                setFormData({ ...formData, withdraw_votes: v })
+              }
+            />
+          </div>
+          <div className="flex items-center justify-between border-2 border-black rounded-none p-3 shadow-[2px_2px_0_0_#000] bg-gray-50">
+            <div className="space-y-0.5">
+              <p className="uppercase font-mono font-bold">
+                Allow Withdraw Candidates
+              </p>
+              <p className="text-sm text-gray-700">
+                Candidates can withdraw themselve.
+              </p>
+            </div>
+            <Switch
+              id="withdraw_candidates"
+              checked={formData.withdraw_candidates}
+              onCheckedChange={(v) =>
+                setFormData({ ...formData, withdraw_candidates: v })
+              }
+            />
+          </div>
+          <div className="pt-2 flex justify-center gap-3">
+            <Button
               type="submit"
               disabled={!program || !isInitialized}
-              className="bg-black text-white font-bold py-3 px-6 rounded-lg
-              hover:bg-gray-900 transition duration-200 w-full disabled:bg-opacity-70"
+              className="rounded-none border-2 border-black shadow-[4px_4px_0_0_#000] bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-70"
             >
               Create Poll
-            </button>
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() =>
+                setFormData({
+                  title: "",
+                  description: "",
+                  startDate: "",
+                  endDate: "",
+                  add_candidates: true,
+                  withdraw_votes: true,
+                  withdraw_candidates: true,
+                })
+              }
+              className="rounded-none border-2 border-black bg-white text-black hover:bg-gray-100 shadow-[2px_2px_0_0_#000]"
+            >
+              Reset
+            </Button>
           </div>
         </form>
-      </div>
+      </section>
     </div>
-  )
-}
+  );
+};
 
-export default Page
+export default Page;

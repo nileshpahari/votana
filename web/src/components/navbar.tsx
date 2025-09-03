@@ -71,6 +71,9 @@ const Header = () => {
                   DECENTRALIZED VOTING
                 </p>
               </Link>
+              <Link href="/create" className="text-primary border-2 border-black shadow-[2px_2px_0_0_#000] px-4 py-1 rounded-none hover:bg-muted">
+                  Create
+              </Link>
             </div>
 
             {/* Desktop Navigation */}
