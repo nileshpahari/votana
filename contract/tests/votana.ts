@@ -14,7 +14,6 @@ const CANDIDATE_SEED = "candidate";
 const VOTER_SEED = "voter";
 
 describe("votana", () => {
-
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 
@@ -33,10 +32,12 @@ describe("votana", () => {
   const candidate_name_1 = "JavaScript";
   const candidate_name_2 = "Rust";
   const candidate_name_3 = "Python";
-  const candidate_name_long = "This candidate name is way too long and exceeds the 32 character limit";
+  const candidate_name_long =
+    "This candidate name is way too long and exceeds the 32 character limit";
 
   // Test data for edge cases
-  const long_title = "This title is way too long and exceeds the 30 character limit";
+  const long_title =
+    "This title is way too long and exceeds the 30 character limit";
   const long_description = "A".repeat(201); // 201 characters
   const max_title = "A".repeat(30); // Exactly 30 characters
   const max_description = "B".repeat(200); // Exactly 200 characters
@@ -125,7 +126,9 @@ describe("votana", () => {
           poll_description_1,
           new BN(start_time),
           new BN(end_time),
-          { open: {} }
+          true,
+          true,
+          true
         )
         .accounts({
           poll: poll_pkey,
@@ -144,7 +147,10 @@ describe("votana", () => {
         start: start_time,
         end: end_time,
         candidates: 0,
-        mode: { open: {} },
+        votes: 0,
+        allow_candidate_add: true,
+        allow_candidate_withdraw: true,
+        allow_vote_closing: true,
       });
       await checkCounter(counter_pkey, "total", 1);
       await checkCounter(counter_pkey, "active", 1);
@@ -162,7 +168,9 @@ describe("votana", () => {
             poll_description_2,
             new BN(currentTime + 3600),
             new BN(currentTime + 100),
-            { open: {} }
+            true,
+            true,
+            true
           )
           .accounts({
             poll: poll_pkey,
@@ -193,7 +201,10 @@ describe("votana", () => {
     it("Should successfully register candidate for a poll", async () => {
       const [registrations_pkey] = getRegistrationsAddress();
       const [poll_pkey] = getExistingPollAddress(1);
-      const [candidate_pkey] = await getNewCandidateAddress(1, registrations_pkey);
+      const [candidate_pkey] = await getNewCandidateAddress(
+        1,
+        registrations_pkey
+      );
 
       await program.methods
         .registerCandidate(new BN(1), candidate_name_1)
@@ -222,7 +233,10 @@ describe("votana", () => {
     it("Should fail when trying to register for non-existent poll", async () => {
       const [registrations_pkey] = getRegistrationsAddress();
       const [fake_poll_pkey] = getExistingPollAddress(999);
-      const [candidate_pkey] = await getNewCandidateAddress(999, registrations_pkey);
+      const [candidate_pkey] = await getNewCandidateAddress(
+        999,
+        registrations_pkey
+      );
 
       let should_fail = "This should fail";
       try {
@@ -255,10 +269,7 @@ describe("votana", () => {
       const [poll_pkey] = getExistingPollAddress(pollId);
       const [candidate_pkey] = getExistingCandidateAddress(pollId, cid);
       const [votes_pkey] = getVotesAddress();
-      const [voter_pkey] = getVoterAddress(
-        pollId,
-        alice.publicKey,
-      );
+      const [voter_pkey] = getVoterAddress(pollId, alice.publicKey);
 
       await program.methods
         .castVote(new BN(pollId), new BN(cid))
@@ -293,14 +304,8 @@ describe("votana", () => {
     it("Should fail when trying to vote for non-registered candidate", async () => {
       const pollId = 1;
       const [poll_pkey] = getExistingPollAddress(pollId);
-      const [fake_candidate_pkey] = getExistingCandidateAddress(
-        pollId,
-        999,
-      );
-      const [voter_pkey] = getVoterAddress(
-        pollId,
-        bob.publicKey,
-      );
+      const [fake_candidate_pkey] = getExistingCandidateAddress(pollId, 999);
+      const [voter_pkey] = getVoterAddress(pollId, bob.publicKey);
       const [votes_pkey] = getVotesAddress();
 
       let should_fail = "This should fail";
@@ -328,13 +333,179 @@ describe("votana", () => {
     });
   });
 
+  describe("Close vote", () => {
+    it("Should successfully close vote", async () => {
+      const [poll_pkey] = getExistingPollAddress(1);
+      const [candidate_pkey] = getExistingCandidateAddress(1, 1);
+      const [votes_pkey] = getVotesAddress();
+      const [voter_pkey] = getVoterAddress(1, alice.publicKey);
+
+      await program.methods
+        .closeVote(new BN(1), new BN(1))
+        .accounts({
+          poll: poll_pkey,
+          candidate: candidate_pkey,
+          voter: voter_pkey,
+          votes: votes_pkey,
+          signer: alice.publicKey,
+        } as Record<string, PublicKey>)
+        .signers([alice])
+        .rpc({ commitment: "confirmed" });
+
+      const candidateData = await program.account.candidate.fetch(
+        candidate_pkey
+      );
+      await checkVotes(votes_pkey, "total", 1);
+      await checkVotes(votes_pkey, "active", 0);
+      assert.strictEqual(
+        candidateData.votes.toNumber(),
+        0,
+        "Candidate should have 0 vote"
+      );
+    });
+    it("Should fail when trying to close vote for non-existent candidate", async () => {
+      const [poll_pkey] = getExistingPollAddress(1);
+      const [candidate_pkey] = getExistingCandidateAddress(1, 999);
+      const [votes_pkey] = getVotesAddress();
+      const [voter_pkey] = getVoterAddress(1, alice.publicKey);
+      let should_fail = "This should fail";
+      try {
+        await program.methods
+          .closeVote(new BN(1), new BN(999))
+          .accounts({
+            poll: poll_pkey,
+            candidate: candidate_pkey,
+            voter: voter_pkey,
+            votes: votes_pkey,
+            signer: alice.publicKey,
+          } as Record<string, PublicKey>)
+          .signers([alice])
+          .rpc({ commitment: "confirmed" });
+      } catch (error: any) {
+        should_fail = "Failed";
+      }
+      assert.strictEqual(
+        should_fail,
+        "Failed",
+        "Should fail for non-existent candidate"
+      );
+    });
+  });
+
+  describe("Unregister Candidate", () => {
+    it("Should successfully unregister a candidate", async () => {
+      const [poll_pkey] = getExistingPollAddress(1);
+      const [candidate_pkey] = getExistingCandidateAddress(1, 1);
+      const [registrations_pkey] = getRegistrationsAddress();
+      const [votes_pkey] = getVotesAddress();
+      await program.methods
+        .unregisterCandidate(new BN(1), new BN(1))
+        .accounts({
+          candidate: candidate_pkey,
+          poll: poll_pkey,
+          registrations: registrations_pkey,
+          votes: votes_pkey,
+          signer: bob.publicKey,
+        } as Record<string, PublicKey>)
+        .signers([bob])
+        .rpc({ commitment: "confirmed" });
+
+      const pollData = await program.account.poll.fetch(poll_pkey);
+      await checkRegistrations(registrations_pkey, "total", 1);
+      await checkRegistrations(registrations_pkey, "active", 0);
+      assert.strictEqual(
+        pollData.candidates.toNumber(),
+        0,
+        "Poll should have 0 candidates"
+      );
+    });
+    it("Should fail when trying to unregister a non-existent candidate", async () => {
+      const [poll_pkey] = getExistingPollAddress(1);
+      const [candidate_pkey] = getExistingCandidateAddress(1, 999);
+      const [registrations_pkey] = getRegistrationsAddress();
+      const [votes_pkey] = getVotesAddress();
+
+      let should_fail = "This should fail";
+      try {
+        await program.methods
+          .unregisterCandidate(new BN(1), new BN(999))
+          .accounts({
+            candidate: candidate_pkey,
+            poll: poll_pkey,
+            registrations: registrations_pkey,
+            votes: votes_pkey,
+            signer: bob.publicKey,
+          } as Record<string, PublicKey>)
+          .signers([bob])
+          .rpc({ commitment: "confirmed" });
+      } catch (error: any) {
+        should_fail = "Failed";
+      }
+      assert.strictEqual(
+        should_fail,
+        "Failed",
+        "Should fail for non-existent candidate"
+      );
+    });
+  });
+  describe("Close Poll", () => {
+    it("Should successfully close a poll", async () => {
+      const [poll_pkey] = getExistingPollAddress(1);
+      const [registrations_pkey] = getRegistrationsAddress();
+      const [votes_pkey] = getVotesAddress();
+      const [counter_pkey] = getCounterAddress();
+
+      await program.methods
+        .closePoll(new BN(1))
+        .accounts({
+          poll: poll_pkey,
+          counter: counter_pkey,
+          votes: votes_pkey,
+          registrations: registrations_pkey,
+          signer: alice.publicKey,
+        } as Record<string, PublicKey>)
+        .signers([alice])
+        .rpc({ commitment: "confirmed" });
+
+      await checkCounter(counter_pkey, "total", 1);
+      await checkCounter(counter_pkey, "active", 0);
+    });
+    it("Should fail when trying to close a non-existent poll", async () => {
+      const [fake_poll_pkey] = getExistingPollAddress(999);
+      const [registrations_pkey] = getRegistrationsAddress();
+      const [votes_pkey] = getVotesAddress();
+      const [counter_pkey] = getCounterAddress();
+
+      let should_fail = "This should fail";
+      try {
+        await program.methods
+          .closePoll(new BN(999))
+          .accounts({
+            poll: fake_poll_pkey,
+            counter: counter_pkey,
+            votes: votes_pkey,
+            registrations: registrations_pkey,
+            signer: bob.publicKey,
+          } as Record<string, PublicKey>)
+          .signers([bob])
+          .rpc({ commitment: "confirmed" });
+      } catch (error: any) {
+        should_fail = "Failed";
+      }
+      assert.strictEqual(
+        should_fail,
+        "Failed",
+        "Should fail for non-existent poll"
+      );
+    });
+  });
+
   async function airdrop(connection: any, address: any, amount = 1000000000) {
     await connection.confirmTransaction(
       await connection.requestAirdrop(address, amount),
       "confirmed"
     );
   }
-
 
   // address derivation helpers
   function getCounterAddress() {
@@ -359,17 +530,18 @@ describe("votana", () => {
   }
 
   async function getNewPollAddress(
-    counter: PublicKey,
+    counter: PublicKey
   ): Promise<[PublicKey, number]> {
     const counterData = await program.account.counter.fetch(counter);
     return PublicKey.findProgramAddressSync(
-      [Buffer.from(POLL_SEED), new BN(counterData.total).add(new BN(1)).toArrayLike(Buffer, "le", 8)],
+      [
+        Buffer.from(POLL_SEED),
+        new BN(counterData.total).add(new BN(1)).toArrayLike(Buffer, "le", 8),
+      ],
       program.programId
     );
   }
-  function getExistingPollAddress(
-    pollId: number,
-  ): [PublicKey, number] {
+  function getExistingPollAddress(pollId: number): [PublicKey, number] {
     return PublicKey.findProgramAddressSync(
       [Buffer.from(POLL_SEED), new BN(pollId).toArrayLike(Buffer, "le", 8)],
       program.programId
@@ -378,9 +550,11 @@ describe("votana", () => {
 
   async function getNewCandidateAddress(
     pollId: number,
-    registrations: PublicKey,
+    registrations: PublicKey
   ): Promise<[PublicKey, number]> {
-    const registrationsData = await program.account.registrations.fetch(registrations);
+    const registrationsData = await program.account.registrations.fetch(
+      registrations
+    );
     return PublicKey.findProgramAddressSync(
       [
         Buffer.from(CANDIDATE_SEED),
@@ -390,10 +564,10 @@ describe("votana", () => {
       program.programId
     );
   }
-  
+
   function getExistingCandidateAddress(
     pollId: number,
-    cid: number,
+    cid: number
   ): [PublicKey, number] {
     return PublicKey.findProgramAddressSync(
       [
@@ -407,7 +581,7 @@ describe("votana", () => {
 
   function getVoterAddress(
     pollId: number,
-    voter: PublicKey,
+    voter: PublicKey
   ): [PublicKey, number] {
     return PublicKey.findProgramAddressSync(
       [
@@ -425,7 +599,6 @@ describe("votana", () => {
     }
   }
 
-
   // Verification helper functions
   async function checkCounter(
     counter: PublicKey,
@@ -436,7 +609,9 @@ describe("votana", () => {
     assert.strictEqual(
       counterData[toCheck].toNumber(),
       expectedCount,
-      `Counter ${toCheck} count should be ${expectedCount} but was ${counterData[toCheck].toNumber()}`
+      `Counter ${toCheck} count should be ${expectedCount} but was ${counterData[
+        toCheck
+      ].toNumber()}`
     );
   }
 
@@ -451,7 +626,9 @@ describe("votana", () => {
     assert.strictEqual(
       registrationsData[toCheck].toNumber(),
       expectedCount,
-      `Registrations ${toCheck} count should be ${expectedCount} but was ${registrationsData[toCheck].toNumber()}`
+      `Registrations ${toCheck} count should be ${expectedCount} but was ${registrationsData[
+        toCheck
+      ].toNumber()}`
     );
   }
 
@@ -464,7 +641,9 @@ describe("votana", () => {
     assert.strictEqual(
       votesData[toCheck].toNumber(),
       expectedCount,
-      `Votes ${toCheck} count should be ${expectedCount} but was ${votesData[toCheck].toNumber()}`
+      `Votes ${toCheck} count should be ${expectedCount} but was ${votesData[
+        toCheck
+      ].toNumber()}`
     );
   }
 
@@ -479,7 +658,10 @@ describe("votana", () => {
       start?: number;
       end?: number;
       candidates?: number;
-      mode?: any;
+      votes?: number;
+      allow_candidate_add?: boolean;
+      allow_candidate_withdraw?: boolean;
+      allow_vote_closing?: boolean;
     }
   ) {
     const pollData = await program.account.poll.fetch(poll);
@@ -537,11 +719,25 @@ describe("votana", () => {
         } but was ${pollData.candidates.toNumber()}`
       );
     }
-    if (expected.mode !== undefined) {
-      assert.deepEqual(
-        pollData.mode,
-        expected.mode,
-        `Poll mode should match expected mode`
+    if (expected.allow_candidate_add !== undefined) {
+      assert.strictEqual(
+        pollData.allowCandidateAdding,
+        expected.allow_candidate_add,
+        `Poll allow_candidate_add should be ${expected.allow_candidate_add} but was ${pollData.allowCandidateAdding}`
+      );
+    }
+    if (expected.allow_candidate_withdraw !== undefined) {
+      assert.strictEqual(
+        pollData.allowCandidateWithdraw,
+        expected.allow_candidate_withdraw,
+        `Poll allow_candidate_withdraw should be ${expected.allow_candidate_withdraw} but was ${pollData.allowCandidateWithdraw}`
+      );
+    }
+    if (expected.allow_vote_closing !== undefined) {
+      assert.strictEqual(
+        pollData.allowVoteClosing,
+        expected.allow_vote_closing,
+        `Poll allow_vote_closing should be ${expected.allow_vote_closing} but was ${pollData.allowVoteClosing}`
       );
     }
   }
