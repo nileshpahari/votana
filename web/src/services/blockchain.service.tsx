@@ -402,7 +402,7 @@ export const fetchPollDetails = async (
     candidates: poll.candidates.toNumber(),
     votes: poll.votes.toNumber(),
     allow_candidate_add: poll.allowCandidateAdding,
-    allow_vote_close: poll.allowVoteClosing,
+    allow_vote_closing: poll.allowVoteClosing,
     allow_candidate_withdraw: poll.allowCandidateWithdraw,
     title: poll.title,
     description: poll.description,
@@ -423,7 +423,7 @@ const serializedPoll = (polls: any[]): Poll[] =>
     candidates: c.account.candidates.toNumber(),
     votes: c.account.votes.toNumber(),
     allow_candidate_add: c.account.allowCandidateAdding,
-    allow_vote_close: c.account.allowVoteClosing,
+    allow_vote_closing: c.account.allowVoteClosing,
     allow_candidate_withdraw: c.account.allowCandidateWithdraw,
     title: c.account.title,
     description: c.account.description,
@@ -460,17 +460,19 @@ export const hasUserVoted = async (
   program: Program<Votana>,
   publicKey: PublicKey,
   pollId: number
-): Promise<boolean> => {
-  const voterPda = getVoterPDA(pollId, publicKey)
+): Promise<number | null> => {
+  const voterPda = getVoterPDA(pollId, publicKey);
 
   try {
     const voterAccount = await program.account.voter.fetch(voterPda);
+
     if (!voterAccount || !voterAccount.hasVoted) {
-      return false; // Default value if no account exists or hasn't voted
+      return null; 
     }
-    return true;
+    return voterAccount.cid.toNumber();
   } catch (error) {
     console.error("Error fetching voter account:", error);
-    return false;
+    return null;
   }
 };
+

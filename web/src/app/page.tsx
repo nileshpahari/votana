@@ -59,7 +59,7 @@ export default function Page() {
     )
   }
   return (
-    <div className='flex flex-col items-center justify-center w-full h-screen bg-white'>
+    <div className='flex flex-col items-center justify-center w-full min-h-screen bg-white'>
       {!publicKey&& (
         <>
           <p className="text-gray-600 text-xl">Please connect your wallet to use this app.</p>

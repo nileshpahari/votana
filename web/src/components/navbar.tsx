@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, BarChart3, Menu, X, Vote } from "lucide-react";
+import { Search, BarChart3, Menu, X } from "lucide-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -40,7 +40,7 @@ const Header = () => {
   const [isMounted, setIsMounted] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  useEffect(() => {
+  useEffect(() => { 
     setIsMounted(true);
   }, []);
 
@@ -51,7 +51,7 @@ const Header = () => {
   useEffect(() => {
     if (!programReadOnly) return;
     fetchData();
-  }, [programReadOnly]);
+  }, [programReadOnly, fetchData]);
 
   return (
     <>
@@ -60,9 +60,6 @@ const Header = () => {
           <div className="flex items-center justify-between h-16">
             {/* Logo Section */}
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary border-4 border-black shadow-md flex items-center justify-center">
-                <Vote className="h-6 w-6 text-white font-bold" />
-              </div>
               <Link href="/">
                 <h1 className="text-xl font-bold font-mono text-black tracking-wider">
                   VOTANA
