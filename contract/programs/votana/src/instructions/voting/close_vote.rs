@@ -16,6 +16,10 @@ pub fn close_vote(ctx: Context<CloseVote>, poll_id: u64, cid: u64) -> Result<()>
     require!(candidate.cid == cid, ErrorCode::CandidateNotRegistered);
 
     require!(voter.has_voted, ErrorCode::VoterNotVoted);
+
+      if !poll.allow_vote_closing {
+        require_keys_eq!(poll.creator, ctx.accounts.signer.key(), ErrorCode::Unauthorized);
+    }
     require!(now < poll.end, ErrorCode::PollNotActive);
     // ensure counters won't underflow
     require!(candidate.votes > 0, ErrorCode::CandidateVotesUnderflow);

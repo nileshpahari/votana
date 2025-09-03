@@ -20,10 +20,6 @@ pub fn cast_vote(ctx: Context<CastVote>, poll_id: u64, cid: u64) -> Result<()> {
     }
 
     require!(
-        poll.start <= now,
-        ErrorCode::PollNotActive
-    );
-    require!(
         poll.end > now,
         ErrorCode::PollNotActive
     );

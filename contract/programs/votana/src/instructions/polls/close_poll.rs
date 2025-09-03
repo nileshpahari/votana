@@ -13,9 +13,6 @@ pub fn close_poll(ctx: Context<ClosePoll>, _poll_id: u64) -> Result<()> {
         ErrorCode::Unauthorized
     );
 
-    let now_ts = Clock::get()?.unix_timestamp as u64;
-    require!(now_ts >= poll.end, ErrorCode::PollStillActive);
-
     // changing the global counters
     counter.active=counter.active.saturating_sub(1);
     registrations.active=registrations.active.saturating_sub(poll.candidates);

@@ -13,7 +13,6 @@ pub fn register_candidate(ctx: Context<RegisterCandidate>, poll_id: u64, name: S
 
     let now = Clock::get()?.unix_timestamp as u64;
 
-    require!(poll.start <= now, ErrorCode::PollNotActive);
     require!(poll.end > now, ErrorCode::PollNotActive);
 
     require!(poll.id == poll_id, ErrorCode::PollDoesNotExist);
